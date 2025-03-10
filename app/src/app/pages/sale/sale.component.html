@@ -1,0 +1,338 @@
+<div class="input-group mt-4">
+  <span class="input-group-text bg-danger text-white">เลือกโต๊ะ</span>
+  <input
+    class="form-control"
+    type="number"
+    style="width: 100px"
+    [(ngModel)]="tableNo"
+  />
+</div>
+
+<div class="card mt-2">
+  <div class="card-header">อาหาร/เครื่องดื่ม</div>
+  <div class="card-body">
+    <div>
+      <button class="btn btn-dark mr-2" (click)="filterAll()">
+        <i class="fa fa-utensils me-2"></i>ทั้งหมด
+      </button>
+      <button class="btn btn-success mr-2" (click)="filterFood()">
+        <i class="fa fa-bowl-food me-2"></i>อาหาร
+      </button>
+      <button class="btn btn-warning mr-2" (click)="filterDrink()">
+        <i class="fa fa-mug-hot me-2"></i>เครื่องดิ่ม
+      </button>
+      <button class="btn btn-secondary mr-2" (click)="filterRice()">
+        <i class="fa fa-bowl-food me-2"></i>ข้าว
+      </button>
+      <button class="btn btn-info mr-2" (click)="filterSnack()">
+        <i class="fa fa-cookie me-2"></i>ของว่าง
+      </button>
+      <button class="btn btn-danger mr-2" (click)="clearAllSaleTemp()">
+        <i class="fa fa-times me-2"></i>ล้างรายการ
+      </button>
+      @if (amount>0) {
+      <button
+        class="btn btn-outline-success"
+        data-bs-toggle="modal"
+        data-bs-target="#modalBillForPay"
+        (click)="printBillBeforePay()"
+      >
+        <i class="fa fa-print me-2"></i>พิมพ์ใบแจ้งยอด
+      </button>
+      }
+
+      <div class="container-fluid">
+        <div class="row">
+          <div class="col-9">
+            <div class="row mt-3">
+              @for (item of foods; track item) {
+              <div class="col-xl- col-lg-3 col-md-3 col-sm-6 col-xs-12">
+                <div class="card">
+                  <img
+                    (click)="saveSaleTemp(item)"
+                    class="card-image"
+                    src="{{ serverPath }}/uploads/foods/{{ item.img }}"
+                    height="150px"
+                  />
+                  <div class="card-body">
+                    <div class="h6 text-center">{{ item.name }}</div>
+                    <div class="text-success h5 text-center font-weight-bold">
+                      {{ item.price }}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              }
+            </div>
+          </div>
+
+          <div class="col-3 mt-3">
+            <div class="alert bg-dark text-end h4">
+              {{ amount.toLocaleString("th-TH") }} ฿
+            </div>
+            @if (amount>0) {
+            <button
+              class="btn btn-block btn-lg btn-success font-weight-bold"
+              data-bs-toggle="modal"
+              data-bs-target="#modalEndSale"
+            >
+              จบการขาย
+            </button>
+            } @for (item of saleTemps; track item) {
+            <div class="card mt-3">
+              <div class="card-body">
+                <div class="d-flex justify-content-between">
+                  <div class="h5">{{ item.Food.name + " x " + item.qty }}</div>
+                  <button class="btn-close" (click)="removeItem(item)"></button>
+                </div>
+              </div>
+              <div class="card-footer">
+                <div class="row g-2">
+                  <div class="col-4">
+                    <button
+                      class="btn btn-danger btn-sm btn-block"
+                      (click)="changeQty(item.id, 'minus')"
+                    >
+                      <i class="fa fa-minus"></i>
+                    </button>
+                  </div>
+                  <div class="col-4">
+                    <button
+                      class="btn btn-secondary btn-sm btn-block"
+                      (click)="chooseFoodSize(item)"
+                      data-bs-toggle="modal"
+                      data-bs-target="#modalFoodSize"
+                    >
+                      <i class="fa fa-list"></i>
+                    </button>
+                  </div>
+                  <div class="col-4">
+                    <button
+                      class="btn btn-primary btn-sm btn-block"
+                      (click)="changeQty(item.id, 'plus')"
+                    >
+                      <i class="fa fa-plus"></i>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<app-modal
+  modalId="modalFoodSize"
+  title="เลือกขนาด/รสชาติ"
+  modalSize="modal-lg"
+>
+  <div class="d-flex justify-content-between">
+    <div class="h4">{{ foodName }}</div>
+    <button class="btn btn-primary" (click)="newSaleTempDetail()">
+      <i class="fa fa-plus me-2"></i>เพิ่มรายการ
+    </button>
+  </div>
+  <table class="mt-3 table table-bordered table-striped">
+    <thead>
+      <tr>
+        <th></th>
+        <th>รายการ</th>
+        <th class="text-center">จำนวน</th>
+        <th class="text-center">รสชาติ</th>
+        <th class="text-center">เลือกขนาด</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (item of saleTempDetail; track $index) {
+      <tr>
+        <td class="text-center">
+          <button
+            class="btn btn-danger btn-sm"
+            (click)="
+              removeSaleTempDetail(
+                item.id,
+                saleTempDetail.length,
+                item.saleTempId
+              )
+            "
+          >
+            <i class="fa fa-times"></i>
+          </button>
+        </td>
+        <td class="align-content-center">{{ item.Food.name }}</td>
+        <td class="text-center align-content-center">{{ item.qty }}</td>
+        <td class="text-center">
+          @for (taste of tastes; track $index) { @if (taste.id===item.tasteId) {
+          <button
+            class="btn btn-dark btn-sm me-2"
+            (click)="selectedTaste(item.id, taste.id, 'deselect')"
+          >
+            {{ taste.name }}
+          </button>
+          }@else {<button
+            class="btn btn-outline-dark btn-sm me-2"
+            (click)="selectedTaste(item.id, taste.id, 'select')"
+          >
+            {{ taste.name }}</button
+          >} }
+        </td>
+        <td class="text-center">
+          @for (foodSize of foodSizes; track $index) { @if
+          (foodSize.addMoney>0){ @if (foodSize.addMoney==item.addMoney) {
+          <button
+            class="btn btn-dark btn-sm me-1"
+            (click)="selectedFoodSize(item.id, foodSize.id,'deselect')"
+          >
+            {{ foodSize.name }} + {{ foodSize.addMoney }} บาท
+          </button>
+          }@else {
+          <button
+            class="btn btn-outline-dark btn-sm me-1"
+            (click)="selectedFoodSize(item.id, foodSize.id, 'select')"
+          >
+            {{ foodSize.name }} + {{ foodSize.addMoney }} บาท
+          </button>
+          } } }
+        </td>
+        <td class="text-center">
+          <button
+            class="btn btn-success me-1"
+            (click)="updateQty(item.id, 'plus')"
+          >
+            <i class="fa fa-plus"></i>
+          </button>
+          <button
+            class="btn btn-danger"
+            [disabled]="item.qty == 1"
+            (click)="updateQty(item.id, 'minus')"
+          >
+            <i class="fa fa-minus"></i>
+          </button>
+        </td>
+      </tr>
+      }
+    </tbody>
+  </table>
+</app-modal>
+
+<app-modal modalId="modalEndSale" title="จบการขาย">
+  <div class="h4">การรับเงิน</div>
+  <div class="row mt-4">
+    <div class="col-6">
+      <button
+        [className]="getClassName('cash')"
+        (click)="selectedPayType('cash')"
+      >
+        เงินสด
+      </button>
+    </div>
+    <div class="col-6">
+      <button
+        [className]="getClassName('tranfer')"
+        (click)="selectedPayType('tranfer')"
+      >
+        โอน
+      </button>
+    </div>
+  </div>
+  <div class="mt-3 h4">ยอดเงิน</div>
+  <input
+    class="form-control form-control-lg text-end"
+    disabled
+    [value]="amount.toLocaleString('th-TH')"
+  />
+
+  <div class="mt-3">รับเงิน</div>
+  <div class="mt-3">
+    <div class="row">
+      <div class="col-3">
+        <button
+          [className]="getClassNameOfButton(50)"
+          (click)="changeInputMoney(50)"
+        >
+          50
+        </button>
+      </div>
+      <div class="col-3">
+        <button
+          [className]="getClassNameOfButton(100)"
+          (click)="changeInputMoney(100)"
+        >
+          100
+        </button>
+      </div>
+      <div class="col-3">
+        <button
+          [className]="getClassNameOfButton(500)"
+          (click)="changeInputMoney(500)"
+        >
+          500
+        </button>
+      </div>
+      <div class="col-3">
+        <button
+          [className]="getClassNameOfButton(1000)"
+          (click)="changeInputMoney(1000)"
+        >
+          1000
+        </button>
+      </div>
+    </div>
+  </div>
+  <input
+    class="mt-3 form-control form-control-lg border border-secondary text-end"
+    [(ngModel)]="inputMoney"
+    (keyup)="changeInputMoney(inputMoney)"
+    type="number"
+  />
+
+  <div class="mt-3">เงินทอน</div>
+  <input
+    class="form-control form-control-lg text-center"
+    disabled
+    [value]="returnMoney.toLocaleString('th-TH')"
+  />
+
+  <div class="mt-3">
+    <div class="row g-1">
+      <div class="col-6">
+        <button
+          class="btn btn-primary btn-lg btn-block"
+          (click)="changeInputMoney(amount)"
+        >
+          จ่ายพอดี
+        </button>
+      </div>
+      <div class="col-6">
+        <button
+          class="btn btn-success btn-lg btn-block"
+          (click)="endSale()"
+          [disabled]="inputMoney < amount"
+        >
+          จบการขาย
+        </button>
+      </div>
+    </div>
+  </div>
+</app-modal>
+
+<button
+  style="display: none"
+  id="btnPrintBill"
+  data-bs-toggle="modal"
+  data-bs-target="#modalBillForPay"
+></button>
+
+<app-modal modalId="modalBillForPay" title="ใบแจ้งรายการ/ใบเสร็จ">
+  <iframe
+    id="pdf-frame"
+    height="500px"
+    style="width: 100%"
+    frameBorder="0"
+  ></iframe>
+</app-modal>
