@@ -1,6 +1,5 @@
 # MY@POS
 
-[MY@POS](http://45.76.148.88/)
 * A comprehensive Blue Archive database and tool for players and enthusiasts.*
 
 ## 🚀 Project Overview
