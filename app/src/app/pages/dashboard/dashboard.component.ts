@@ -5,6 +5,16 @@ import { Chart } from 'chart.js/auto';
 import dayjs from 'dayjs';
 import Swal from 'sweetalert2';
 import config from '../../../config';
+import type { ReportPerDay, ReportPerMonth } from '../../interface/report';
+import { ErrorHandlerService } from '../../error/error-handler.service';
+
+interface ReportPerDayResponse {
+  results: ReportPerDay[];
+}
+
+interface ReportPerMonthResponse {
+  results: ReportPerMonth[];
+}
 
 @Component({
   selector: 'app-dashboard',
@@ -14,13 +24,18 @@ import config from '../../../config';
   styleUrl: './dashboard.component.css',
 })
 export class DashboardComponent {
-  constructor(private http: HttpClient) {}
+  constructor(
+    private http: HttpClient,
+    private errorHandler: ErrorHandlerService
+  ) {}
 
-  incomePerDays: any[] = [];
-  incomePerMonths: any[] = [];
+  incomePerDays: ReportPerDay[] = [];
+  incomePerMonths: ReportPerMonth[] = [];
+
   years: number[] = [];
   monthsName: string[] = [];
   days: number[] = [];
+
   dayjs: typeof dayjs = dayjs;
   year: number = dayjs().year();
   month: number = dayjs().month() + 1;
@@ -128,55 +143,51 @@ export class DashboardComponent {
   }
 
   fetchDataSumPerDayInYearAndMonth() {
-    try {
-      const payload = {
-        year: this.year,
-        month: this.month,
-      };
+    const payload = {
+      year: this.year,
+      month: this.month,
+    };
 
-      // const token = localStorage.getItem('token');
-      // const headers = new HttpHeaders().set('Authorization', `Bearer ${token}`);
-
-      this.http
-        .post(config.apiPath + '/api/report/sumPerDay', payload,  {
+    this.http
+      .post<ReportPerDayResponse>(
+        config.apiPath + '/api/report/sumPerDay',
+        payload,
+        {
           headers: config.headers(),
-        })
-        .subscribe((res: any) => {
-          this.incomePerDays = res.results;
+        }
+      )
+      .subscribe({
+        next: (response: ReportPerDayResponse) => {
+          this.incomePerDays = response.results;
           this.createBarChartDays();
-        });
-    } catch (e: any) {
-      Swal.fire({
-        title: 'error',
-        text: e.message,
-        icon: 'error',
+        },
+        error: (error) => {
+          this.errorHandler.handleError(error);
+        },
       });
-    }
   }
 
   fetchDataSumPerMonthInYear() {
-    try {
-      const payload = {
-        year: this.year,
-      };
+    const payload = {
+      year: this.year,
+    };
 
-      // const token = localStorage.getItem('token');
-      // const headers = new HttpHeaders().set('Authorization', `Bearer ${token}`);
-
-      this.http
-        .post(config.apiPath + '/api/report/sumPerMonth', payload, {
+    this.http
+      .post<ReportPerMonthResponse>(
+        config.apiPath + '/api/report/sumPerMonth',
+        payload,
+        {
           headers: config.headers(),
-        })
-        .subscribe((res: any) => {
-          this.incomePerMonths = res.results;
+        }
+      )
+      .subscribe({
+        next: (response: ReportPerMonthResponse) => {
+          this.incomePerMonths = response.results;
           this.createBarChartMonths();
-        });
-    } catch (e: any) {
-      Swal.fire({
-        title: 'error',
-        text: e.message,
-        icon: 'error',
+        },
+        error: (error) => {
+          this.errorHandler.handleError(error);
+        },
       });
-    }
   }
 }

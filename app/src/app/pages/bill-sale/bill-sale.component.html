@@ -24,11 +24,11 @@
       <thead>
         <tr>
           <th class="text-center">วันที่</th>
-          <th class="text-end">รหัสบิล</th>
-          <th class="text-end">พนักงานขาย</th>
+          <th class="text-center">รหัสบิล</th>
+          <th class="text-center">พนักงานขาย</th>
           <th class="text-center">โต๊ะ</th>
           <th class="text-center">การจ่าย</th>
-          <th class="text-end">ราคาทั้งหมด</th>
+          <th class="text-center" width="120px">ราคาทั้งหมด</th>
           <th></th>
         </tr>
       </thead>
@@ -38,10 +38,16 @@
           <td class="align-content-center text-center">
             {{ dayjs(billSale.createdDate).format("DD/MM/YYYY") }}
           </td>
-          <td class="align-content-center text-end">{{ billSale.id }}</td>
-          <td class="align-content-center text-end">{{ billSale.User.name }}</td>
-          <td class="align-content-center text-center">{{ billSale.tableNo }}</td>
-          <td class="align-content-center text-center">{{ billSale.payType }}</td>
+          <td class="align-content-center text-center">{{ billSale.id }}</td>
+          <td class="align-content-center text-center">
+            {{ billSale.User.name }}
+          </td>
+          <td class="align-content-center text-center">
+            {{ billSale.tableNo }}
+          </td>
+          <td class="align-content-center text-center">
+            {{ billSale.payType }}
+          </td>
           <td class="align-content-center text-end">{{ billSale.amount }}</td>
           <td class="align-content-center text-center">
             <button

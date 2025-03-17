@@ -26,6 +26,7 @@ model User {
 enum Role {
   ADMIN
   EMPLOYEE
+  CEO
 }
 
 model FoodType {
@@ -93,6 +94,7 @@ model SaleTempDetail {
   foodSizeId Int?
   tasteId    Int?
   foodId     Int
+  remark     String?
   Food       Food      @relation(fields: [foodId], references: [id])
   SaleTemp   SaleTemp  @relation(fields: [saleTempId], references: [id])
   Taste      Taste?    @relation(fields: [tasteId], references: [id])

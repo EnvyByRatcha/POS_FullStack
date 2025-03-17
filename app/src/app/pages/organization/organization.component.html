@@ -1,8 +1,8 @@
 <div class="card mt-3">
-  <div class="card-header bg-dark">ข้อมูลร้าน</div>
+  <div class="card-header card-style">ข้อมูลร้าน</div>
   <div class="card-body">
     <div class="d-flex flex-row align-items-center">
-      @if (logo!=='') {
+      @if (organization?.logo!='') {
       <div class="mb-2">
         <img
           [src]="logoPath"
@@ -12,21 +12,25 @@
         />
       </div>
       }
-      <div class="h4 ml-4">{{ name }}</div>
+      <div class="h4 ml-4">{{ organization?.name }}</div>
     </div>
     <div class="alert alert-success mt-4">
-      <div class="h6">ที่อยู่ : {{ address }}</div>
-      <div class="h6">อีเมล: {{ email }}</div>
-      <div class="h6">โทรศัพท์: {{ phone }}</div>
-      <div class="h6">เว็ปไซต์: {{ website }}</div>
+      <div class="h6">ที่อยู่ : {{ organization?.address }}</div>
+      <div class="h6">อีเมล: {{ organization?.email }}</div>
+      <div class="h6">โทรศัพท์: {{ organization?.phone }}</div>
+      <div class="h6">เว็ปไซต์: {{ organization?.website }}</div>
     </div>
     <div class="alert alert-primary">
-      <div class="h6">เลขผู้เสียภาษี: {{ taxCode }}</div>
-      <div class="h6">พร้อมเพย์: {{ promptPay }}</div>
+      <div class="h6">เลขผู้เสียภาษี: {{ organization?.taxCode }}</div>
+      <div class="h6">พร้อมเพย์: {{ organization?.promptPay }}</div>
     </div>
     <div class="mt-4">
-      <button class="btn btn-primary" data-bs-toggle="modal"
-      data-bs-target="#modalOrganize">
+      <button
+        class="btn btn-primary"
+        data-bs-toggle="modal"
+        data-bs-target="#modalOrganize"
+        (click)="selectItem()"
+      >
         <i class="fa fa-pencil me-2"></i>แก้ไข
       </button>
     </div>
@@ -34,16 +38,41 @@
 </div>
 
 <app-modal modalId="modalOrganize" title="แก้ไขข้อมูลร้าน">
-  <div>ชื่อร้าน</div>
-    <input class="form-control" type="text" [(ngModel)]="name" />
+  <form [formGroup]="oganizationForm">
+    <div>ชื่อร้าน</div>
+    <input class="form-control" type="text" formControlName="name" />
+    <div *ngIf="oganizationForm.controls['name'].invalid && isFormSubmmit">
+      <span class="error-input">กรุณากรอกชื่อร้าน</span>
+    </div>
+
     <div class="mt-3">ที่อยู่</div>
-    <input class="form-control" type="text" [(ngModel)]="address" />
+    <input class="form-control" type="text" formControlName="address" />
+    <div *ngIf="oganizationForm.controls['address'].invalid && isFormSubmmit">
+      <span class="error-input">กรุณากรอกที่อยู่ของร้าน</span>
+    </div>
+
     <div class="mt-3">เบอร์โทรศัพท์</div>
-    <input class="form-control" type="text" [(ngModel)]="phone" />
+    <input
+      class="form-control"
+      type="tel"
+      minlength="10"
+      maxlength="10"
+      pattern="[0-9]{10}"
+      onkeypress="return event.charCode >= 48 && event.charCode <= 57"
+      formControlName="phone"
+    />
+    <div *ngIf="oganizationForm.controls['phone'].invalid && isFormSubmmit">
+      <span class="error-input">กรุณาตรวจสอบความถูกต้องเบอร์ติดต่อ</span>
+    </div>
+
     <div class="mt-3">อีเมล</div>
-    <input class="form-control" type="text" [(ngModel)]="email" />
+    <input class="form-control" type="text" formControlName="email" />
+    <div *ngIf="oganizationForm.controls['email'].invalid && isFormSubmmit">
+      <span class="error-input">กรุณากรอกอีเมล</span>
+    </div>
+
     <div class="mt-3">รูปภาพ</div>
-    @if (logo!=='') {
+    @if (organization?.logo!=='') {
     <div class="mb-2">
       <img
         [src]="logoPath"
@@ -54,15 +83,50 @@
     </div>
     }
     <input class="form-control" type="file" (change)="onFileChange($event)" />
+
     <div class="mt-3">เลขผู้เสียภาษี</div>
-    <input class="form-control" type="text" [(ngModel)]="taxCode" />
+    <input
+      class="form-control"
+      type="text"
+      minlength="13"
+      maxlength="13"
+      pattern="[0-9]{13}"
+      onkeypress="return event.charCode >= 48 && event.charCode <= 57"
+      formControlName="taxCode"
+    />
+    <div *ngIf="oganizationForm.controls['taxCode'].invalid && isFormSubmmit">
+      <span class="error-input">กรุณาตรวจสอบความถูกต้องเลขผู้เสียภาษี</span>
+    </div>
+
     <div class="mt-3">เว็ปไซต์</div>
-    <input class="form-control" type="text" [(ngModel)]="website" />
+    <input class="form-control" type="text" formControlName="website" />
+    <div *ngIf="oganizationForm.controls['website'].invalid && isFormSubmmit">
+      <span class="error-input">กรุณากรอกเว็ปไซต์</span>
+    </div>
+
     <div class="mt-3">พร้อมเพย์</div>
-    <input class="form-control" type="text" [(ngModel)]="promptPay" />
-    <button class="btn btn-primary mt-3" (click)="save()">
+    <input
+      class="form-control"
+      type="tel"
+      minlength="10"
+      maxlength="10"
+      pattern="[0-9]{10}"
+      onkeypress="return event.charCode >= 48 && event.charCode <= 57"
+      formControlName="promptPay"
+    />
+    <div *ngIf="oganizationForm.controls['promptPay'].invalid && isFormSubmmit">
+      <span class="error-input">กรุณาตรวจสอบความถูกต้องเลขพร้อมเพย์</span>
+    </div>
+
+    <div class="mt-3">permission</div>
+    <input type="text" class="form-control" formControlName="permission" />
+    <div
+      *ngIf="oganizationForm.controls['permission'].invalid && isFormSubmmit"
+    >
+      <span class="error-input">กรุณากรอกรหัสยืนยันตัวตน</span>
+    </div>
+    <button class="btn btn-primary mt-3" type="submit" (click)="save()">
       <i class="fa fa-check me-2"></i>บันทึก
     </button>
+  </form>
 </app-modal>
-
-

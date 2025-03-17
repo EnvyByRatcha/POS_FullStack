@@ -27,12 +27,13 @@ export class AuthGuard implements CanActivate {
         if (this.checkPermission(level.level, requiredLevel)) {
           return true;
         } else {
-          this.router.navigate(['/login']);
+          this.router.navigate(['/']);
           return false;
         }
       }),
       catchError(() => {
-        this.router.navigate(['/login']);
+        localStorage.removeItem('token')
+        this.router.navigate(['/']);
         return [false];
       })
     );

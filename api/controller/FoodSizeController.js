@@ -4,13 +4,13 @@ const prisma = new PrismaClient();
 module.exports = {
   create: async (req, res) => {
     try {
-      const { name, price, remark, foodTypeId } = req.body;
+      const { name, addMoney, remark, foodTypeId } = req.body;
       await prisma.foodSize.create({
         data: {
           name,
-          addMoney: parseInt(price),
+          addMoney,
           remark,
-          foodTypeId: parseInt(foodTypeId),
+          foodTypeId,
         },
       });
 
@@ -21,13 +21,13 @@ module.exports = {
   },
   update: async (req, res) => {
     try {
-      const { name, price, remark, foodTypeId, id } = req.body;
+      const { name, addMoney, remark, foodTypeId, id } = req.body;
       await prisma.foodSize.update({
         data: {
           name,
-          addMoney: parseInt(price),
+          addMoney,
           remark,
-          foodTypeId: parseInt(foodTypeId),
+          foodTypeId,
         },
         where: {
           id,
@@ -51,6 +51,9 @@ module.exports = {
         where: {
           status: "use",
         },
+        orderBy:{
+          foodTypeId:'asc'
+        }
       });
 
       return res.send({ results: results });

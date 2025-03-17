@@ -1,5 +1,5 @@
 <div class="card mt-3">
-  <div class="card-header">ประเภทอาหาร</div>
+  <div class="card-header card-style">ประเภทอาหาร</div>
   <div class="card-body">
     <div>
       <button
@@ -45,16 +45,22 @@
 
 <app-modal
   modalId="modalFoodType"
-  [title]="id > 0 ? 'แก้ไขข้อมูลประเภทอาหาร' : 'เพิ่มข้อมูลประเภทอาหาร'"
+  [title]="foodTypeForm.get('id')?.value > 0 ? 'แก้ไขข้อมูลประเภทอาหาร' : 'เพิ่มข้อมูลประเภทอาหาร'"
 >
-  <div>
-    <div>ชื่อประเภทอาหาร</div>
-    <input class="form-control mt-1" [(ngModel)]="name" />
-  </div>
-  <div class="mt-3">
-    <button class="btn btn-primary" (click)="save()">
-      <i class="fa fa-check mr-2"></i>
-      บันทึก
-    </button>
-  </div>
+  <form [formGroup]="foodTypeForm">
+    <div>
+      <div>ชื่อประเภทอาหาร</div>
+      <input class="form-control mt-1" formControlName="name" />
+    </div>
+    <div *ngIf="foodTypeForm.controls['name'].invalid && isFormSubmmit">
+      <span class="error-input">กรุณากรอกชื่อประเภทอาหาร</span>
+    </div>
+
+    <div class="mt-3">
+      <button class="btn btn-primary" type="submit" (click)="save()">
+        <i class="fa fa-check mr-2"></i>
+        บันทึก
+      </button>
+    </div>
+  </form>
 </app-modal>

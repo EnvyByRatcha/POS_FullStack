@@ -5,16 +5,15 @@ const fs = require("fs");
 module.exports = {
   create: async (req, res) => {
     try {
-      const { name, price, remark, img, foodType, foodTypeId } = req.body;
+      const { name, price, img, foodType, foodTypeId } = req.body;
 
       await prisma.food.create({
         data: {
           name,
-          price,
-          remark,
+          price:parseInt(price),
           img: img ?? "",
           foodType,
-          foodTypeId: parseInt(foodTypeId),
+          foodTypeId,
           status: "use",
         },
       });
@@ -26,7 +25,7 @@ module.exports = {
   },
   update: async (req, res) => {
     try {
-      const { name, price, remark, foodType, foodTypeId, id } = req.body;
+      const { name, price, foodType, foodTypeId, id } = req.body;
 
       let image = req.body.img;
       if (image === undefined) {
@@ -40,7 +39,6 @@ module.exports = {
         data: {
           name,
           price,
-          remark,
           foodType,
           foodTypeId: parseInt(foodTypeId),
           img: image,
@@ -149,8 +147,10 @@ module.exports = {
       });
 
       if (result) {
-        if (fs.existsSync(`uploads/foods/${result.img}`)) {
-          fs.unlinkSync(`uploads/foods/${result.img}`);
+        if (result.img || result.img !== "") {
+          if (fs.existsSync(`uploads/foods/${result.img}`)) {
+            fs.unlinkSync(`uploads/foods/${result.img}`);
+          }
         }
       }
 

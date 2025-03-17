@@ -44,6 +44,12 @@ module.exports = {
   list: async (req, res) => {
     try {
       const results = await prisma.user.findMany({
+        select: {
+          id: true,
+          name: true,
+          username: true,
+          level: true,
+        },
         where: {
           status: "use",
         },
@@ -56,10 +62,13 @@ module.exports = {
   },
   create: async (req, res) => {
     try {
-      const { name, username, password, level } = req.body;
+      const { name, username, password, level, permission } = req.body;
+
+      if (permission !== process.env.PERMISSION_KEY) {
+        return res.status(401).send({ error: "Access denied" });
+      }
 
       const hashedPassword = await bcrypt.hash(password, 10);
-
       const user = await prisma.user.findFirst({
         where: {
           username,
@@ -88,13 +97,20 @@ module.exports = {
   },
   update: async (req, res) => {
     try {
-      const { name, username, level } = req.body;
+      const { name, username, password, level, permission } = req.body;
+
+      if (permission !== process.env.PERMISSION_KEY) {
+        return res.status(401).send({ error: "Access denied" });
+      }
+
+      const hashedPassword = await bcrypt.hash(password, 10);
 
       await prisma.user.update({
         data: {
           name,
           username,
-          level,
+          password: hashedPassword,
+          level: level.toUpperCase(),
         },
         where: {
           id: parseInt(req.params.id),
@@ -108,12 +124,17 @@ module.exports = {
   },
   remove: async (req, res) => {
     try {
+      const { id, permission } = req.body;
+
+      if (permission !== process.env.PERMISSION_KEY) {
+        return res.status(401).send({ error: "Access denied" });
+      }
       await prisma.user.update({
         data: {
           status: "delete",
         },
         where: {
-          id: parseInt(req.params.id),
+          id: parseInt(id),
         },
       });
 

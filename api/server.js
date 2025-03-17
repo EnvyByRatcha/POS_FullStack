@@ -71,15 +71,11 @@ app.post("/api/user/create", isSignIn, isAuthorized("ADMIN"), (req, res) =>
 app.put("/api/user/update/:id", isSignIn, isAuthorized("ADMIN"), (req, res) =>
   UserController.update(req, res)
 );
-app.delete(
-  "/api/user/remove/:id",
-  isSignIn,
-  isAuthorized("ADMIN"),
-  (req, res) => UserController.remove(req, res)
+app.post("/api/user/remove", isSignIn, isAuthorized("ADMIN"), (req, res) =>
+  UserController.remove(req, res)
 );
-app.get(
-  "/api/user/getLevelFromToken",
-  (req, res) => UserController.getLevelFromToken(req, res)
+app.get("/api/user/getLevelFromToken", (req, res) =>
+  UserController.getLevelFromToken(req, res)
 );
 
 /*---foodTypeController--*/
@@ -148,6 +144,9 @@ app.post("/api/saleTemp", (req, res) => SaleTempController.create(req, res));
 app.get("/api/saletemp/:userId", (req, res) =>
   SaleTempController.list(req, res)
 );
+app.get("/api/optional/:id", (req, res) =>
+  SaleTempController.optional(req, res)
+);
 app.delete("/api/saleTemp/:userId", (req, res) =>
   SaleTempController.clear(req, res)
 );
@@ -169,10 +168,7 @@ app.put("/api/saleTempDetail/foodSize", (req, res) =>
 app.put("/api/saleTempDetail/taste", (req, res) =>
   SaleTempController.updateTaste(req, res)
 );
-app.post("/api/saleTempDetail/option", (req, res) =>
-  SaleTempController.newSaleTempDetail(req, res)
-);
-app.post("/api/saleTemp/removeSaleTempDetail", (req, res) =>
+app.put("/api/saleTemp/removeSaleTempDetail", (req, res) =>
   SaleTempController.removeSaleTempDetail(req, res)
 );
 app.post("/api/billSale", (req, res) => SaleTempController.endSale(req, res));

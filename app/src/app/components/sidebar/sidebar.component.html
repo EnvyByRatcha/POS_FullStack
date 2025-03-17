@@ -23,10 +23,6 @@
         <div class="d-block text-white">{{ name }}</div>
       </div>
     </div>
-
-    <div class="d-grid">
-      <button class="btn btn-danger" (click)="signOut()">signout</button>
-    </div>
     }
 
     <nav class="mt-2">
@@ -107,6 +103,13 @@
             <i class="fa fa-money-bill-wave me-2"></i>
             <p>สรุปยอดรายเดือน</p>
           </a>
+        </li>
+        }@if (level=='EMPLOYEE' || level=='ADMIN'){
+        <li class="nav-item">
+          <button (click)="signOut()" class="nav-link text-start">
+            <i class="fa fa-power-off mr-2 text-danger"></i>
+            <p class="text-danger">SIGN OUT</p>
+          </button>
         </li>
         }
         <br />

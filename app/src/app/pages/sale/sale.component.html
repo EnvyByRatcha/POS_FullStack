@@ -3,23 +3,31 @@
   <input
     class="form-control"
     type="number"
+    min="1"
+    max="12"
+    oninput="validity.valid||(value='');"
     style="width: 100px"
     [(ngModel)]="tableNo"
+    (keydown)="preventDecimalInput($event)"
   />
 </div>
 
 <div class="card mt-2">
-  <div class="card-header">อาหาร/เครื่องดื่ม</div>
+  <div class="card-header card-style">อาหาร/เครื่องดื่ม</div>
   <div class="card-body">
     <div>
-      <button class="btn btn-dark mr-2" (click)="filterAll()">
+      <button
+        class="btn mr-2 text-black"
+        style="background-color: orange"
+        (click)="filterAll()"
+      >
         <i class="fa fa-utensils me-2"></i>ทั้งหมด
       </button>
       <button class="btn btn-success mr-2" (click)="filterFood()">
         <i class="fa fa-bowl-food me-2"></i>อาหาร
       </button>
       <button class="btn btn-warning mr-2" (click)="filterDrink()">
-        <i class="fa fa-mug-hot me-2"></i>เครื่องดิ่ม
+        <i class="fa fa-mug-hot me-2"></i>เครื่องดื่ม
       </button>
       <button class="btn btn-secondary mr-2" (click)="filterRice()">
         <i class="fa fa-bowl-food me-2"></i>ข้าว
@@ -46,18 +54,20 @@
           <div class="col-9">
             <div class="row mt-3">
               @for (item of foods; track item) {
-              <div class="col-xl- col-lg-3 col-md-3 col-sm-6 col-xs-12">
-                <div class="card">
+              <div class="col-12 col-sm-6 col-md-3 col-lg-3">
+                <div class="card overflow-hidden">
                   <img
                     (click)="saveSaleTemp(item)"
                     class="card-image"
                     src="{{ serverPath }}/uploads/foods/{{ item.img }}"
                     height="150px"
+                    data-bs-toggle="modal"
+                    data-bs-target="#modalFoodSize"
                   />
                   <div class="card-body">
-                    <div class="h6 text-center">{{ item.name }}</div>
+                    <div class="h5 text-center">{{ item.name }}</div>
                     <div class="text-success h5 text-center font-weight-bold">
-                      {{ item.price }}
+                      {{ item.price }} -
                     </div>
                   </div>
                 </div>
@@ -82,8 +92,25 @@
             <div class="card mt-3">
               <div class="card-body">
                 <div class="d-flex justify-content-between">
-                  <div class="h5">{{ item.Food.name + " x " + item.qty }}</div>
+                  <div class="h5">
+                    {{ item.Food.name + " [ " + item.qty + " ]" }}
+                  </div>
                   <button class="btn-close" (click)="removeItem(item)"></button>
+                </div>
+                <div>
+                  @for (detail of item.SaleTempDetail; track $index) {
+                  <div class="d-flex justify-content-between">
+                    <div>
+                      {{ detail.foodSizeId ? detail.Taste?.name : "Nm" }}
+                      {{ detail.FoodSize ? detail.FoodSize.name : "" }}
+                      {{ " x " + detail.qty }}
+                    </div>
+                    <div>
+                      {{ (item.Food.price + detail.addMoney) * detail.qty }}
+                      -
+                    </div>
+                  </div>
+                  }
                 </div>
               </div>
               <div class="card-footer">
@@ -91,7 +118,9 @@
                   <div class="col-4">
                     <button
                       class="btn btn-danger btn-sm btn-block"
-                      (click)="changeQty(item.id, 'minus')"
+                      (click)="openModalOption(item)"
+                      data-bs-toggle="modal"
+                      data-bs-target="#modalFoodSize"
                     >
                       <i class="fa fa-minus"></i>
                     </button>
@@ -99,7 +128,7 @@
                   <div class="col-4">
                     <button
                       class="btn btn-secondary btn-sm btn-block"
-                      (click)="chooseFoodSize(item)"
+                      (click)="openModalOption(item)"
                       data-bs-toggle="modal"
                       data-bs-target="#modalFoodSize"
                     >
@@ -109,7 +138,9 @@
                   <div class="col-4">
                     <button
                       class="btn btn-primary btn-sm btn-block"
-                      (click)="changeQty(item.id, 'plus')"
+                      (click)="saveSaleTemp(item.Food)"
+                      data-bs-toggle="modal"
+                      data-bs-target="#modalFoodSize"
                     >
                       <i class="fa fa-plus"></i>
                     </button>
@@ -128,11 +159,11 @@
 <app-modal
   modalId="modalFoodSize"
   title="เลือกขนาด/รสชาติ"
-  modalSize="modal-lg"
+  modalSize="modal-xl"
 >
-  <div class="d-flex justify-content-between">
+  <div class="d-flex justify-content-between align-content-center">
     <div class="h4">{{ foodName }}</div>
-    <button class="btn btn-primary" (click)="newSaleTempDetail()">
+    <button class="btn btn-primary" (click)="saveSaleTemp(foodTarget)">
       <i class="fa fa-plus me-2"></i>เพิ่มรายการ
     </button>
   </div>
@@ -144,39 +175,35 @@
         <th class="text-center">จำนวน</th>
         <th class="text-center">รสชาติ</th>
         <th class="text-center">เลือกขนาด</th>
-        <th></th>
+        <th class="text-center">ราคาสุทธิ</th>
+        <th class="text-center">รวม</th>
+        <th class="text-center"></th>
       </tr>
     </thead>
     <tbody>
       @for (item of saleTempDetail; track $index) {
       <tr>
-        <td class="text-center">
+        <td class="text-center align-content-center">
           <button
             class="btn btn-danger btn-sm"
-            (click)="
-              removeSaleTempDetail(
-                item.id,
-                saleTempDetail.length,
-                item.saleTempId
-              )
-            "
+            (click)="removeSaleTempDetail(item)"
           >
             <i class="fa fa-times"></i>
           </button>
         </td>
-        <td class="align-content-center">{{ item.Food.name }}</td>
+        <td class="align-content-center">{{ item.Food?.name }}</td>
         <td class="text-center align-content-center">{{ item.qty }}</td>
-        <td class="text-center">
+        <td class="text-center align-content-center">
           @for (taste of tastes; track $index) { @if (taste.id===item.tasteId) {
           <button
             class="btn btn-dark btn-sm me-2"
-            (click)="selectedTaste(item.id, taste.id, 'deselect')"
+            (click)="selectedFoodOption(item, taste.id, 'Taste', 'deselect')"
           >
             {{ taste.name }}
           </button>
           }@else {<button
             class="btn btn-outline-dark btn-sm me-2"
-            (click)="selectedTaste(item.id, taste.id, 'select')"
+            (click)="selectedFoodOption(item, taste.id, 'Taste', 'select')"
           >
             {{ taste.name }}</button
           >} }
@@ -186,32 +213,35 @@
           (foodSize.addMoney>0){ @if (foodSize.addMoney==item.addMoney) {
           <button
             class="btn btn-dark btn-sm me-1"
-            (click)="selectedFoodSize(item.id, foodSize.id,'deselect')"
+            (click)="selectedFoodOption(item, foodSize.id, 'Size', 'deselect')"
           >
             {{ foodSize.name }} + {{ foodSize.addMoney }} บาท
           </button>
           }@else {
           <button
             class="btn btn-outline-dark btn-sm me-1"
-            (click)="selectedFoodSize(item.id, foodSize.id, 'select')"
+            (click)="selectedFoodOption(item, foodSize.id, 'Size', 'select')"
           >
             {{ foodSize.name }} + {{ foodSize.addMoney }} บาท
           </button>
           } } }
         </td>
+        <td class="text-center align-content-center">
+          {{ item.Food?.price + item.addMoney }} -
+        </td>
+        <td class="text-center align-content-center">
+          {{ (item.Food?.price + item.addMoney) * item.qty + " -" }}
+        </td>
         <td class="text-center">
           <button
-            class="btn btn-success me-1"
-            (click)="updateQty(item.id, 'plus')"
-          >
-            <i class="fa fa-plus"></i>
-          </button>
-          <button
-            class="btn btn-danger"
-            [disabled]="item.qty == 1"
-            (click)="updateQty(item.id, 'minus')"
+            class="btn btn-danger mr-2"
+            (click)="updateQty(item, 'minus')"
+            [disabled]="item.qty <= 1"
           >
             <i class="fa fa-minus"></i>
+          </button>
+          <button class="btn btn-success" (click)="updateQty(item, 'plus')">
+            <i class="fa fa-plus"></i>
           </button>
         </td>
       </tr>
@@ -286,9 +316,12 @@
   </div>
   <input
     class="mt-3 form-control form-control-lg border border-secondary text-end"
+    oninput="validity.valid||(value='');"
     [(ngModel)]="inputMoney"
     (keyup)="changeInputMoney(inputMoney)"
+    (keydown)="preventDecimalInput($event)"
     type="number"
+    min="0"
   />
 
   <div class="mt-3">เงินทอน</div>

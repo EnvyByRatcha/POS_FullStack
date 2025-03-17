@@ -5,7 +5,6 @@ module.exports = {
   create: async (req, res) => {
     try {
       const { foodId, qty, tableNo, userId } = req.body;
-
       const food = await prisma.food.findFirst({
         where: {
           id: parseInt(foodId),
@@ -41,30 +40,74 @@ module.exports = {
         });
       }
 
-      return res.send({ message: "success" });
+      const results = await prisma.saleTemp.findFirst({
+        include: { Food: true, SaleTempDetail: true },
+        where: {
+          userId: parseInt(userId),
+          foodId,
+          tableNo,
+        },
+      });
+
+      return res.send({ message: "success", results: results });
+    } catch (e) {
+      return res.status(500).send({ error: e.message });
+    }
+  },
+  optional: async (req, res) => {
+    try {
+      const foodTypeId = req.params.id;
+
+      const results = await prisma.foodType.findFirst({
+        include: {
+          FoodSize: {
+            where: {
+              status: "use",
+            },
+          },
+          Taste: {
+            where: {
+              status: "use",
+            },
+          },
+        },
+        where: {
+          id: parseInt(foodTypeId),
+          status: "use",
+        },
+      });
+
+      return res.send({ results: results });
     } catch (e) {
       return res.status(500).send({ error: e.message });
     }
   },
   list: async (req, res) => {
     try {
-      const results = await prisma.saleTemp.findMany({
-        include: { Food: true, SaleTempDetail: true },
-        where: {
-          userId: parseInt(req.params.userId),
-          qty: {
-            gt: 0,
-          },
-        },
-        orderBy: {
-          id: "desc",
-        },
-      });
-
       await prisma.saleTemp.deleteMany({
         where: {
           userId: parseInt(req.params.userId),
           qty: 0,
+        },
+      });
+
+      let arr = [];
+
+      const results = await prisma.saleTemp.findMany({
+        include: {
+          Food: true,
+          SaleTempDetail: {
+            include: {
+              Taste: true,
+              FoodSize: true,
+            },
+          },
+        },
+        where: {
+          userId: parseInt(req.params.userId),
+        },
+        orderBy: {
+          id: "asc",
         },
       });
 
@@ -136,56 +179,16 @@ module.exports = {
       return res.status(500).send({ error: e.message });
     }
   },
-  changeQty: async (req, res) => {
-    try {
-      const { id, style } = req.body;
-
-      const oldData = await prisma.saleTemp.findFirst({
-        where: {
-          id,
-        },
-      });
-
-      let oldQty = oldData.qty;
-      if (style == "plus") {
-        oldQty += 1;
-      } else {
-        oldQty -= 1;
-      }
-
-      await prisma.saleTemp.update({
-        data: { qty: oldQty },
-        where: {
-          id,
-        },
-      });
-
-      return res.send({ message: "success" });
-    } catch (e) {
-      return res.status(500).send({ error: e.message });
-    }
-  },
   createDetail: async (req, res) => {
     try {
-      const { foodId, qty, saleTempId } = req.body;
+      const { foodId, saleTempId } = req.body;
 
-      const oldData = await prisma.saleTempDetail.findFirst({
-        where: {
+      await prisma.saleTempDetail.create({
+        data: {
           foodId,
           saleTempId,
         },
       });
-
-      if (oldData == null) {
-        for (let i = 0; i < qty; i++) {
-          await prisma.saleTempDetail.create({
-            data: {
-              foodId,
-              saleTempId,
-            },
-          });
-        }
-      }
 
       return res.send({ message: "success" });
     } catch (e) {
@@ -202,49 +205,33 @@ module.exports = {
           saleTempId: parseInt(req.params.saleTempId),
         },
         orderBy: {
-          id: "desc",
+          id: "asc",
         },
       });
 
-      const arr = [];
-
-      for (let i = 0; i < results.length; i++) {
-        const item = results[i];
-
-        if (item.tasteId != null) {
-          const taste = await prisma.taste.findFirst({
-            where: {
-              id: item.tasteId,
-            },
-          });
-          item.tasteName = taste.name;
-        }
-        arr.push(item);
-      }
-
-      return res.send({ results: arr });
+      return res.send({ results: results });
     } catch (e) {
       return res.status(500).send({ error: e.message });
     }
   },
   updateFoodSize: async (req, res) => {
     try {
-      const { foodSizeId, saleTempId, selected } = req.body;
+      const { id, choose, selected } = req.body;
 
       if (selected == "select") {
         const foodSize = await prisma.foodSize.findFirst({
           where: {
-            id: foodSizeId,
+            id: choose,
           },
         });
 
         await prisma.saleTempDetail.update({
           data: {
             addMoney: foodSize.addMoney,
-            foodSizeId,
+            foodSizeId: choose,
           },
           where: {
-            id: saleTempId,
+            id,
           },
         });
       } else {
@@ -254,7 +241,7 @@ module.exports = {
             foodSizeId: null,
           },
           where: {
-            id: saleTempId,
+            id,
           },
         });
       }
@@ -266,15 +253,15 @@ module.exports = {
   },
   updateTaste: async (req, res) => {
     try {
-      const { saleTempId, tasteId, selected } = req.body;
+      const { id, choose, selected } = req.body;
 
       if (selected == "select") {
         await prisma.saleTempDetail.update({
           data: {
-            tasteId,
+            tasteId: choose,
           },
           where: {
-            id: saleTempId,
+            id,
           },
         });
       } else {
@@ -283,7 +270,7 @@ module.exports = {
             tasteId: null,
           },
           where: {
-            id: saleTempId,
+            id,
           },
         });
       }
@@ -293,36 +280,9 @@ module.exports = {
       return res.status(500).send({ error: e.message });
     }
   },
-  newSaleTempDetail: async (req, res) => {
-    try {
-      const { saleTempId, foodId } = req.body;
-
-      await prisma.saleTemp.update({
-        data: {
-          qty: {
-            increment: 1,
-          },
-        },
-        where: {
-          id: saleTempId,
-        },
-      });
-
-      await prisma.saleTempDetail.create({
-        data: {
-          saleTempId,
-          foodId,
-        },
-      });
-
-      return res.send({ message: "success" });
-    } catch (e) {
-      return res.status(500).send({ error: e.message });
-    }
-  },
   removeSaleTempDetail: async (req, res) => {
     try {
-      const { id, qty, saleTempId } = req.body;
+      const { id, saleTempId, qty } = req.body;
 
       await prisma.saleTempDetail.delete({
         where: {
@@ -332,7 +292,9 @@ module.exports = {
 
       await prisma.saleTemp.update({
         data: {
-          qty: qty - 1,
+          qty: {
+            decrement: qty,
+          },
         },
         where: {
           id: saleTempId,
@@ -822,7 +784,9 @@ module.exports = {
             id: saleTempDetail.saleTempId,
           },
         });
-      } else {
+      }
+
+      if (condition == "minus") {
         const saleTempDetail = await prisma.saleTempDetail.update({
           data: {
             qty: {

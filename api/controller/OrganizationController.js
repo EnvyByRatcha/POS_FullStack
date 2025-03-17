@@ -1,5 +1,7 @@
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
+const dotenv = require("dotenv");
+dotenv.config();
 
 module.exports = {
   create: async (req, res) => {
@@ -17,6 +19,12 @@ module.exports = {
         taxCode: req.body.taxCode ?? "",
       };
 
+      const permission = req.body.permission;
+
+      if (permission !== process.env.PERMISSION_KEY) {
+        return res.status(401).send({ error: "Access denied" });
+      }
+
       if (organization) {
         if (req.body.logo) {
           const fs = require("fs");
@@ -28,7 +36,7 @@ module.exports = {
         await prisma.organization.update({
           data: payload,
           where: {
-            id:organization.id,
+            id: organization.id,
           },
         });
       } else {

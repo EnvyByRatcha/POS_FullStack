@@ -1,25 +1,50 @@
 import { HttpClient } from '@angular/common/http';
 import { Component } from '@angular/core';
 import { ModalComponent } from '../../components/modal/modal.component';
-import { FormsModule } from '@angular/forms';
+import {
+  FormControl,
+  FormGroup,
+  FormsModule,
+  ReactiveFormsModule,
+  Validators,
+} from '@angular/forms';
 import config from '../../../config';
 import Swal from 'sweetalert2';
+import { CommonModule } from '@angular/common';
+import type { Taste, FoodType } from '../../interface/food';
+import type { MessageResponse } from '../../interface/message';
+import { ErrorHandlerService } from '../../error/error-handler.service';
+
+interface FoodTypeResponse {
+  results: FoodType[];
+}
+
+interface TasteResponse {
+  results: Taste[];
+}
 
 @Component({
   selector: 'app-taste',
   standalone: true,
-  imports: [ModalComponent, FormsModule],
+  imports: [ModalComponent, FormsModule, ReactiveFormsModule, CommonModule],
   templateUrl: './taste.component.html',
   styleUrl: './taste.component.css',
 })
 export class TasteComponent {
-  constructor(private http: HttpClient) {}
+  constructor(
+    private http: HttpClient,
+    private errorHandler: ErrorHandlerService
+  ) {}
 
-  tastes: any = [];
-  foodTypes: any = [];
-  id: number = 0;
-  name: String = '';
-  foodTypeId: number = 0;
+  tasteForm: FormGroup = new FormGroup({
+    id: new FormControl(0, [Validators.required]),
+    name: new FormControl('', [Validators.required]),
+    foodTypeId: new FormControl('', [Validators.required]),
+  });
+  isFormSubmmit: boolean = false;
+
+  tastes: Taste[] = [];
+  foodTypes: FoodType[] = [];
 
   ngOnInit() {
     this.fetchDataFoodType();
@@ -27,105 +52,104 @@ export class TasteComponent {
   }
 
   fetchDataFoodType() {
-    try {
-      this.http
-        .get(config.apiPath + '/api/foodType')
-        .subscribe((res: any) => {
-          this.foodTypes = res.results;
-          this.foodTypeId = this.foodTypes[0].id;
-        });
-    } catch (e: any) {
-      Swal.fire({
-        title: 'error',
-        text: e.message,
-        icon: 'error',
+    this.http
+      .get<FoodTypeResponse>(config.apiPath + '/api/foodType')
+      .subscribe({
+        next: (response: FoodTypeResponse) => {
+          this.foodTypes = response.results;
+          this.tasteForm.patchValue({ foodTypeId: this.foodTypes[0].id });
+        },
+        error: (error) => {
+          this.errorHandler.handleError(error);
+        },
       });
-    }
   }
 
   fetchDataTaste() {
-    try {
-      this.http
-        .get(config.apiPath + '/api/taste')
-        .subscribe((res: any) => {
-          this.tastes = res.results;
-        });
-    } catch (e: any) {
-      Swal.fire({
-        title: 'error',
-        text: e.message,
-        icon: 'error',
-      });
-    }
+    this.http.get<TasteResponse>(config.apiPath + '/api/taste').subscribe({
+      next: (response: TasteResponse) => {
+        this.tastes = response.results;
+      },
+      error: (error) => {
+        this.errorHandler.handleError(error);
+      },
+    });
   }
 
   save() {
-    try {
+    this.isFormSubmmit = true;
+    if (this.tasteForm.valid) {
+      const formData = this.tasteForm.value;
+
       const payload = {
-        id: this.id,
-        name: this.name,
-        foodTypeId: this.foodTypeId,
+        ...formData,
       };
 
-      if (this.id > 0) {
+      if (payload.id > 0) {
         this.http
-          .put(config.apiPath + '/api/taste', payload, {
+          .put<MessageResponse>(config.apiPath + '/api/taste', payload, {
             headers: config.headers(),
           })
-          .subscribe((res: any) => {
-            if (res.message == 'success') {
-              Swal.fire({
-                title: 'รสชาติอาหาร',
-                text: 'แก้ไขรสชาติอาหารเสร็จสิ้น',
-                icon: 'success',
-              });
-              this.fetchDataTaste();
-              document.getElementById('modalTaste_btnClose')?.click();
-            }
+          .subscribe({
+            next: (response: MessageResponse) => {
+              if (response.message == 'success') {
+                Swal.fire({
+                  title: 'แก้ไขรสชาติอาหาร',
+                  text: 'แก้ไขรสชาติอาหารเสร็จสิ้น',
+                  icon: 'success',
+                });
+                this.fetchDataTaste();
+                document.getElementById('modalTaste_btnClose')?.click();
+                this.isFormSubmmit = false;
+              }
+            },
+            error: (error) => {
+              this.errorHandler.handleError(error);
+            },
           });
       } else {
         this.http
-          .post(config.apiPath + '/api/taste', payload, {
+          .post<MessageResponse>(config.apiPath + '/api/taste', payload, {
             headers: config.headers(),
           })
-          .subscribe((res: any) => {
-            if (res.message == 'success') {
-              Swal.fire({
-                title: 'รสชาติอาหาร',
-                text: 'เพิ่มรสชาติอาหารเสร็จสิ้น',
-                icon: 'success',
-              });
-              this.fetchDataTaste();
-              document.getElementById('modalTaste_btnClose')?.click();
-            }
+          .subscribe({
+            next: (response: MessageResponse) => {
+              if (response.message == 'success') {
+                Swal.fire({
+                  title: 'เพิ่มรสชาติอาหาร',
+                  text: 'เพิ่มรสชาติอาหารเสร็จสิ้น',
+                  icon: 'success',
+                });
+                this.fetchDataTaste();
+                document.getElementById('modalTaste_btnClose')?.click();
+                this.isFormSubmmit = false;
+              }
+            },
+            error: (error) => {
+              this.errorHandler.handleError(error);
+            },
           });
       }
-    } catch (e: any) {
-      Swal.fire({
-        title: 'error',
-        text: e.message,
-        icon: 'error',
-      });
     }
   }
 
-  async remove(item: any) {
-    try {
-      const button = await Swal.fire({
-        title: 'ลบรสชาติอาหาร',
-        text: 'ต้องการลบรสชาติ ' + item.name + ' ใช่หรือไม่',
-        icon: 'question',
-        showConfirmButton: true,
-        showCancelButton: true,
-      });
+  async remove(item: Taste) {
+    const button = await Swal.fire({
+      title: 'ลบรสชาติอาหาร',
+      text: `ต้องการลบรสชาติ [ ${item.FoodType.name} ${item.name} ] ใช่หรือไม่`,
+      icon: 'question',
+      showConfirmButton: true,
+      showCancelButton: true,
+    });
 
-      if (button.isConfirmed) {
-        this.http
-          .delete(config.apiPath + '/api/taste/' + item.id, {
-            headers: config.headers(),
-          })
-          .subscribe((res: any) => {
-            if ((res.message = 'success')) {
+    if (button.isConfirmed) {
+      this.http
+        .delete<MessageResponse>(config.apiPath + '/api/taste/' + item.id, {
+          headers: config.headers(),
+        })
+        .subscribe({
+          next: (response: MessageResponse) => {
+            if ((response.message = 'success')) {
               Swal.fire({
                 title: 'ลบรสชาติอาหาร',
                 text: 'ลบรสชาติอาหารเสร็จสิ้น',
@@ -134,27 +158,27 @@ export class TasteComponent {
               });
               this.fetchDataTaste();
             }
-          });
-      }
-    } catch (e: any) {
-      Swal.fire({
-        title: 'error',
-        text: e.message,
-        icon: 'error',
-      });
+          },
+          error: (error) => {
+            this.errorHandler.handleError(error);
+          },
+        });
     }
   }
 
   clearForm() {
-    this.id = 0;
-    this.name = '';
-    this.foodTypeId = this.foodTypes[0].id;
+    this.tasteForm.setValue({
+      id: 0,
+      name: '',
+      foodTypeId: this.foodTypes[0].id,
+    });
   }
 
-  selectId(item: any) {
-    this.id = item.id;
-    this.name = item.name;
-    this.foodTypeId = item.FoodType.id;
-    console.log(this.id);
+  selectId(item: Taste) {
+    this.tasteForm.setValue({
+      id: item.id,
+      name: item.name,
+      foodTypeId: item.foodTypeId,
+    });
   }
 }

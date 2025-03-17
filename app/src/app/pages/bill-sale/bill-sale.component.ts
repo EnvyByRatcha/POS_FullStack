@@ -5,6 +5,13 @@ import dayjs from 'dayjs';
 import config from '../../../config';
 import Swal from 'sweetalert2';
 import { ModalComponent } from '../../components/modal/modal.component';
+import { ErrorHandlerService } from '../../error/error-handler.service';
+import type { BillSale } from '../../interface/billSale';
+import type { MessageResponse } from '../../interface/message';
+
+interface BillSaleResponse {
+  results: BillSale[];
+}
 
 @Component({
   selector: 'app-bill-sale',
@@ -14,9 +21,12 @@ import { ModalComponent } from '../../components/modal/modal.component';
   styleUrl: './bill-sale.component.css',
 })
 export class BillSaleComponent {
-  constructor(private http: HttpClient) {}
+  constructor(
+    private http: HttpClient,
+    private errorHandler: ErrorHandlerService
+  ) {}
 
-  billSales: any[] = [];
+  billSales: BillSale[] = [];
   startDate: string = dayjs().startOf('month').format('YYYY-MM-DD');
   endDate: string = dayjs().endOf('month').add(1, 'day').format('YYYY-MM-DD');
   dayjs = dayjs;
@@ -33,9 +43,14 @@ export class BillSaleComponent {
     };
 
     this.http
-      .post(config.apiPath + '/api/billSale/list', payload)
-      .subscribe((res: any) => {
-        this.billSales = res.results;
+      .post<BillSaleResponse>(config.apiPath + '/api/billSale/list', payload)
+      .subscribe({
+        next: (response: BillSaleResponse) => {
+          this.billSales = response.results;
+        },
+        error: (error) => {
+          this.errorHandler.handleError(error);
+        },
       });
   }
 
@@ -50,27 +65,27 @@ export class BillSaleComponent {
 
     if (button.isConfirmed) {
       this.http
-        .delete(config.apiPath + '/api/billSale/' + id)
-        .subscribe((res: any) => {
-          this.fetchData();
+        .delete<MessageResponse>(config.apiPath + '/api/billSale/' + id)
+        .subscribe((response: MessageResponse) => {
+          if (response.message == 'success') {
+            this.fetchData();
+          }
         });
     }
   }
 
-  selectInvoice(item: any) {
+  selectInvoice(item: BillSale) {
     this.fileName = item.invoice;
-
     const btnPrintBill = document.getElementById(
       'btnPrintBill'
     ) as HTMLButtonElement;
     btnPrintBill.click();
-    
+
     this.printBill();
   }
 
   printBill() {
     try {
-      console.log(this.fileName);
       setTimeout(() => {
         const iframe = document.getElementById(
           'pdf-frame'
@@ -79,8 +94,8 @@ export class BillSaleComponent {
       }, 500);
     } catch (e: any) {
       Swal.fire({
-        title: 'error',
-        text: e.message,
+        title: 'เกิดข้อผิดพลาด',
+        text: 'กรุณาลองใหม่อีกครั้ง',
         icon: 'error',
       });
     }

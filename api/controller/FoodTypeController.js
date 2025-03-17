@@ -25,6 +25,9 @@ module.exports = {
         where: {
           status: "use",
         },
+        orderBy: {
+          id:'asc'
+        },
       });
 
       return res.send({ results: results });

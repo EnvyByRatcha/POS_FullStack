@@ -2,23 +2,43 @@ import { HttpClient } from '@angular/common/http';
 import { Component } from '@angular/core';
 import Swal from 'sweetalert2';
 import config from '../../../config';
-import { FormsModule } from '@angular/forms';
+import {
+  FormControl,
+  FormGroup,
+  FormsModule,
+  ReactiveFormsModule,
+  Validators,
+} from '@angular/forms';
 import { ModalComponent } from '../../components/modal/modal.component';
+import { CommonModule } from '@angular/common';
+import type { FoodType } from '../../interface/food';
+import type { MessageResponse } from '../../interface/message';
+import { ErrorHandlerService } from '../../error/error-handler.service';
+
+interface FoodTypeResponse {
+  results: FoodType[];
+}
 
 @Component({
   selector: 'app-food-type',
   standalone: true,
-  imports: [FormsModule, ModalComponent],
+  imports: [FormsModule, ModalComponent, ReactiveFormsModule, CommonModule],
   templateUrl: './food-type.component.html',
   styleUrl: './food-type.component.css',
 })
 export class FoodTypeComponent {
-  name: string = '';
-  remark: string = '';
-  foodTypes: any = [];
-  id: number = 0;
+  constructor(
+    private http: HttpClient,
+    private errorHandler: ErrorHandlerService
+  ) {}
 
-  constructor(private http: HttpClient) {}
+  foodTypeForm: FormGroup = new FormGroup({
+    id: new FormControl(0, [Validators.required]),
+    name: new FormControl('', [Validators.required]),
+  });
+  isFormSubmmit: boolean = false;
+
+  foodTypes: FoodType[] = [];
 
   ngOnInit() {
     this.fetchData();
@@ -26,111 +46,112 @@ export class FoodTypeComponent {
 
   fetchData() {
     this.http
-      .get(config.apiPath + '/api/foodType')
-      .subscribe((res: any) => {
-        this.foodTypes = res.results;
+      .get<FoodTypeResponse>(config.apiPath + '/api/foodType')
+      .subscribe({
+        next: (response: FoodTypeResponse) => {
+          this.foodTypes = response.results;
+        },
+        error: (error) => {
+          this.errorHandler.handleError(error);
+        },
       });
-  }
-
-  clearForm() {
-    this.name = '';
-    this.remark = '';
-    this.id = 0;
   }
 
   save() {
-    try {
-      const payload = {
-        name: this.name,
-        remark: this.remark,
-        id: 0,
-      };
+    this.isFormSubmmit = true;
+    if (this.foodTypeForm.valid) {
+      const formData = this.foodTypeForm.value;
+      const payload = { ...formData };
 
-      if (this.id > 0) {
-        payload.id = this.id;
+      if (payload.id > 0) {
         this.http
-          .put(config.apiPath + '/api/foodType', payload, {
+          .put<MessageResponse>(config.apiPath + '/api/foodType', payload, {
             headers: config.headers(),
           })
-          .subscribe((res: any) => {
-            if (res.message == 'success') {
-              Swal.fire({
-                title: 'แก้ไขประเภทอาหาร',
-                text: 'แก้ไขประเภทอาหารสำเร็จ',
-                icon: 'success',
-                timer: 2000,
-              });
-            }
-            this.fetchData();
-            this.id = 0;
-            document.getElementById('modalFoodType_btnClose')?.click();
+          .subscribe({
+            next: (response: MessageResponse) => {
+              if (response.message == 'success') {
+                Swal.fire({
+                  title: 'แก้ไขประเภทอาหาร',
+                  text: 'แก้ไขประเภทอาหารสำเร็จ',
+                  icon: 'success',
+                  timer: 2000,
+                });
+              }
+              this.fetchData();
+              document.getElementById('modalFoodType_btnClose')?.click();
+              this.isFormSubmmit = false;
+            },
+            error: (error) => {
+              this.errorHandler.handleError(error);
+            },
           });
       } else {
         this.http
-          .post(config.apiPath + '/api/foodType', payload, {
+          .post<MessageResponse>(config.apiPath + '/api/foodType', payload, {
             headers: config.headers(),
           })
-          .subscribe((res: any) => {
-            if (res.message == 'success') {
+          .subscribe({
+            next: (response: MessageResponse) => {
+              if (response.message == 'success') {
+                Swal.fire({
+                  title: 'เพิ่มประเภทอาหาร',
+                  text: 'เพิ่มประเภทอาหารสำเร็จ',
+                  icon: 'success',
+                  timer: 2000,
+                });
+
+                this.fetchData();
+                document.getElementById('modalFoodType_btnClose')?.click();
+                this.isFormSubmmit = false;
+              }
+            },
+            error: (error) => {
+              this.errorHandler.handleError(error);
+            },
+          });
+      }
+    }
+  }
+
+  async remove(item: FoodType) {
+    const button = await Swal.fire({
+      title: 'ลบประเภทอาหาร',
+      text: 'ยืนยันต้องการลบประเภทอาหาร ' + item.name + ' ใช่หรือไม่',
+      icon: 'question',
+      showConfirmButton: true,
+      showCancelButton: true,
+    });
+
+    if (button.isConfirmed) {
+      this.http
+        .delete<MessageResponse>(config.apiPath + '/api/foodType/' + item.id, {
+          headers: config.headers(),
+        })
+        .subscribe({
+          next: (response: MessageResponse) => {
+            if (response.message == 'success') {
               Swal.fire({
-                title: 'เพิ่มประเภทอาหาร',
-                text: 'เพิ่มประเภทอาหารสำเร็จ',
+                title: 'ลบประเภทอาหาร',
+                text: 'ลบประเภทอาหารเสร็จสิ้น',
                 icon: 'success',
                 timer: 2000,
               });
-
               this.fetchData();
-              document.getElementById('modalFoodType_btnClose')?.click();
             }
-          });
-      }
-    } catch (e: any) {
-      Swal.fire({
-        title: 'error',
-        text: e.message,
-        icon: 'error',
-      });
+          },
+          error: (error) => {
+            this.errorHandler.handleError(error);
+          },
+        });
     }
   }
 
-  async remove(item: any) {
-    try {
-      const button = await Swal.fire({
-        title: 'ลบประเภทสินค้า',
-        text: 'ยืนยันต้องการลบประเภทอาหาร ' + item.name + ' ใช่หรือไม่',
-        icon: 'question',
-        showConfirmButton: true,
-        showCancelButton: true,
-      });
-
-      if (button.isConfirmed) {
-        this.http
-          .delete(config.apiPath + '/api/foodType/' + item.id, {
-            headers: config.headers(),
-          })
-          .subscribe((res: any) => {
-            Swal.fire({
-              title: 'ลบประเภทสินค้า',
-              text: 'ลบประเภทสินค้าเสร็จสิ้น',
-              icon: 'success',
-              timer: 2000,
-            });
-
-            this.fetchData();
-          });
-      }
-    } catch (e: any) {
-      Swal.fire({
-        title: 'error',
-        text: e.message,
-        icon: 'error',
-      });
-    }
+  selectItem(item: FoodType) {
+    this.foodTypeForm.setValue({ id: item.id, name: item.name });
   }
 
-  selectItem(item: any) {
-    this.name = item.name;
-    this.remark = item.remark;
-    this.id = item.id;
+  clearForm() {
+    this.foodTypeForm.setValue({ id: 0, name: '' });
   }
 }

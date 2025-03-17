@@ -14,7 +14,12 @@ module.exports = {
         },
         include: {
           BillSaleDetail: true,
-          User: true,
+          User: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
         },
         orderBy: {
           createdDate: "desc",
