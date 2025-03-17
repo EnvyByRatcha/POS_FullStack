@@ -101,7 +101,7 @@
                   @for (detail of item.SaleTempDetail; track $index) {
                   <div class="d-flex justify-content-between">
                     <div>
-                      {{ detail.foodSizeId ? detail.Taste?.name : "Nm" }}
+                      {{ detail.foodSizeId ? detail.Taste?.name : "ปกติ" }}
                       {{ detail.FoodSize ? detail.FoodSize.name : "" }}
                       {{ " x " + detail.qty }}
                     </div>
@@ -111,6 +111,10 @@
                     </div>
                   </div>
                   }
+                  <hr />
+                  <div class="text-end">
+                    <div>{{ "รวม " + computeSaleTemp(item) + " -" }}</div>
+                  </div>
                 </div>
               </div>
               <div class="card-footer">

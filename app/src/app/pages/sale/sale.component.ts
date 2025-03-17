@@ -357,6 +357,19 @@ export class SaleComponent {
     }
   }
 
+  computeSaleTemp(item: SaleTemp) {
+    let sum = 0;
+    for (let i = 0; i < item.SaleTempDetail.length; i++) {
+      const target = item.SaleTempDetail[i];
+      sum += (item.price + target.addMoney) * target.qty;
+    }
+
+    console.log(sum);
+ 
+    return sum;
+ 
+  }
+
   filterFood() {
     this.filter('food');
   }
