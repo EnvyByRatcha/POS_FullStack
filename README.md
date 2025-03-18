@@ -1,9 +1,9 @@
 # MY@POS
 
-* A comprehensive Blue Archive database and tool for players and enthusiasts.*
-
 ## 🚀 Project Overview
 A full-stack Point-of-Sale (POS) system built using JavaScript technologies. This system allows businesses to manage sales transactions effectively with both frontend and backend functionalities.
+
+[Preview_WEbsite](https://ratchan.com/)
 
 ## 🎯 Features
 - 📌 **Authorization** – Secure login and authentication for managing the POS system.
